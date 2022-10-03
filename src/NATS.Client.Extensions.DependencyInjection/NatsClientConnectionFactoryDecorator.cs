@@ -1,4 +1,5 @@
-﻿using NATS.Client.JetStream;
+﻿using System.Linq;
+using NATS.Client.JetStream;
 
 namespace NATS.Client
 {
@@ -15,8 +16,9 @@ namespace NATS.Client
         {
             var connection = _connectionFactory.CreateConnection(options);
             var jm = connection.CreateJetStreamManagementContext();
+            var existedStreams = jm.GetStreamNames();
             
-            foreach(var streamName in streamNames)
+            foreach(var streamName in streamNames.Except(existedStreams))
                 CreateStream(jm, streamName);
 
             return connection.CreateJetStreamContext();
@@ -25,10 +27,6 @@ namespace NATS.Client
 
         private void CreateStream(IJetStreamManagement streamManagement, string streamName)
         {
-            var streamInfo = streamManagement.GetStreamInfo(streamName);
-            if (streamInfo is null)
-                return;
-
             streamManagement.AddStream(new StreamConfiguration.StreamConfigurationBuilder()
                 .WithName(streamName)
                 .WithStorageType(StorageType.File)
